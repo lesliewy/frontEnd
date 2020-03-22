@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <!-- 1.直接使用本地下载好的vue.js -->
+  <script src="vue.js" type="text/javascript" charset="utf-8"></script>
+  <!-- 2.使用vue 提供的cdn-->
+  <!--
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  -->
+  <!-- 3. npm、 vue-cli -->
+</head>
+<body>
+  <!-- 渲染数据: 插值 -->
+  <div id="app1">
+    <!-- 1.文本插值方式. -->
+    <p>
+    {{ message }}
+    <!-- span 节点上的数据不会更新. -->
+    <span v-once>{{message}}</span>
+    </p>
+
+    <!-- 2. 原始HTML 只能对可信html插值，否则有安全问题.-->
+    <p>
+    <p>Using mustaches: {{ rawHtml }}</p>
+    <p>Using v-html directive: <span v-html="rawHtml"></span></p>
+    </p>
+
+    <!-- 3.Vue 绑定指令: {{}} 插值方式不能作用于属性。 v-开头的是vue提供的特殊属性, 在渲染DOM时添加响应式行为.  这里将 span 的title 属性值和message关联.-->
+    <p>
+    <span v-bind:title="mouseHover">
+      鼠标悬停几秒钟查看此处动态绑定的提示信息！
+    </span>
+    </p>
+
+    <!-- {{}} 插值中可以是javascript表达式.-->
+    <p>
+      {{ number + 1 }}
+      {{ ok ? 'YES' : 'NO' }}
+      {{ message.split('').reverse().join('') }}
+      <!-- 不能使用语句. 其中条件判断可以用三元表达式来替换.-->
+      <!--
+      {{ var a = 1 }}
+      {{ if (ok) { return message } }}
+      -->
+    </p>
+  </div>
+
+  <!-- 渲染的数据必须在vue对象创建时的data中.-->
+  <div id="app2">
+    {{ a }}...{{b}}
+  </div>
+
+  <!-- Vue 实例生命周期: 参考 https://cn.vuejs.org/v2/guide/instance.html-->
+  <div id="app3">
+    {{message}}
+  </div>
+
+  <!-- 指令 -->
+  <div id="app4">
+    <!-- 根据seen 的true、false 来决定<p> 标签是否渲染. -->
+    <p v-if="sEEn">现在你看到我了</p>
+
+    <!-- 带参数的指令 -->
+    <!-- v-bind: 后的参数是<a>的属性. -->
+    <a v-bind:href="url">点我...</a>
+    <!-- v-on: 后的参数监听的事件名 -->
+    <a v-on:click="doSomething">click me</a>
+    <!-- 动态参数: []  []里面的值会被强制转成小写，这里data中需要有eventname的属性. 其他位置都是大小写敏感的： data, {{}}, v-if, v-bind -->
+    <a v-on:[eventNAME]='doSomething'>click me2</a>
+    <!-- 缩写 v-bind: :   b-on: @-->
+    <p>
+      <a :href="url">点我...(缩写版)</a>
+      <a @click="doSomething">clicke me</a>
+    </p>
+    <!-- 修饰符: 指定指令的特殊行为-->
+    <p>
+      <span @click='click1'>
+        <!-- stop 只触发内部这个span的click事件.-->
+        <span @click.stop="click2">修饰符</span>
+      </span>
+    </p>
+  </div>
+
+  <!-- 计算属性 vs 侦听属性 -->
+  <!-- {{}} 中的表达式适合于简单逻辑计算，模板中放入复杂运算逻辑显然不合适. 关键还不能复用. -->
+  <!--  当 message 发生变化时，计算属性中的 reversedMessage 会同步变化.
+        在计算属性中最好不要修改data中属性的值, 确保无副作用.
+        computed和methods的区别:  methods 调用每次都会触发;  computed 有缓存，只有当message变化时, 才会重新调用.
+        computed 相比watch 逻辑也更清晰.
+        watch 属性适于: 监听某个属性，然后执行异步操作。
+  -->
+  <div id="app5">
+    <p>Original message: "{{ message }}"</p>
+    <p>Computed reversed message: "{{ reversedMessage }}"</p>
+    <p>Computed reversed message: "{{ reversedMessage2() }}"</p>
+    <p>{{firstName}}  {{lastName}} -- {{ fullName }}</p>
+    <p>{{firstNameWatched}}  {{lastNameWatched}} -- {{ fullNameWatched }}</p>
+  </div>
+
+  <script type="text/javascript">
+  //================================
+  // 新建vue对象, 将数据和DOM关联
+  // app.message 来获取data 中message的值, 也可以 app.$data.message.   app.$el   "$"用于区分vue自有属性和用户定义属性.
+  var vm1 = new Vue({
+  el: '#app1',
+  data: {
+    message: 'Hello Vue!',
+    mouseHover: '页面加载于 ' + new Date().toLocaleString(),
+    rawHtml: '<span style = "color:red">This should be red</span>',
+    number: 10,
+    ok: true
+  }
+  })
+  vm1.message = "Hello Vue changed..."
+
+  //================================
+  // 在new Vue()时指定的data才是响应式的.
+  // var data2 = {a:"this is a"}
+  var data2 = {a:"this is a", b: "this is b"}
+  var vm2 = new Vue({
+    el: '#app2',
+    data: data2
+  })
+  // vm2.b="this is b"
+  vm2.$watch('b', function(oldVal, newVal){
+    console.log('oldVal: ' + oldVal, 'newVal: ' + newVal)
+  })
+  // 让b发生变化. 值必须发生变化，才会触发watch中的function.  如果值没有变，不会触发.
+  vm2.b = "this is new b"
+
+  //================================
+  var vm3 = new Vue({
+    el: '#app3',
+    data: {
+      message: 'Hello Vue.'
+    },
+    beforeCreate: function(){
+      console.log('beforeCreate...')
+    },
+    // vue实例创建已完成. 已经完成了data observer, watch/event等, 但还未mount, $el 属性不可见.
+    created: function(){
+      console.log('created...')
+    },
+    beforeMount: function(){
+      console.log('beforeMount')
+    },
+    // el 被vue的$el替换，挂载成功.
+    mounted: function(){
+      console.log('mounted...')
+    },
+
+    beforeUpdate: function(){
+      console.log('beforeUpdate...')
+    },
+    // 数据变化时, 组件dom已更新完毕.
+    updated: function(){
+      console.log('updated...')
+    }
+  })
+  setTimeout(() => {
+    vm3.message = 'message changed...'
+  }, 3000);
+
+  //================================
+  var vm4 = new Vue({
+    el:"#app4",
+    data:{
+      sEEn: true,
+      url: 'www.baidu.com',
+      doSomething: ()=>{
+        console.log("i am dosomething...")
+      },
+      eventname: 'click',
+    },
+    methods:{
+      click1: ()=>{
+        console.log("click1...")
+      },
+      click2: ()=>{
+        console.log("click2...")
+      }
+    }
+  })
+
+  //================================
+  var vm5 = new Vue({
+    el:"#app5",
+    data: {
+      message: "Hello Vue!",
+      firstName: 'yang',
+      lastName: 'wang',
+      firstNameWatched: 'yang',
+      lastNameWatched: 'wang',
+      fullNameWatched: 'yang wang'
+    },
+    computed: {
+      // 计算属性的 getter
+      reversedMessage: function () {
+        // `this` 指向 vm4 实例
+        return this.message.split('').reverse().join('')
+      },
+      // 这里的now 不会多次更新, 因为Date.now() 不是响应式依赖, 而上面的reversedMessage会随message的变化而变化, message 是响应式属性.
+      now: function () {
+        return Date.now()
+      },
+      fullName: function () {
+        return this.firstName + ' ' + this.lastName
+      }
+    },
+    methods: {
+      reversedMessage2: function(){
+        return this.message.split('').reverse().join('')
+      }
+    },
+    watch: {
+      firstNameWatched: function (val) {
+        this.fullNameWatched = val + ' ' + this.lastNameWatched
+      },
+
+      lastNameWatched: function (val) {
+        this.fullNameWatched = this.firstNameWatched + ' ' + val
+      }
+    }
+  })
+  </script>
+</body>
+</html>
